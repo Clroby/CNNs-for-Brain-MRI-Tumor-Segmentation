@@ -1,0 +1,11 @@
+# Normalize line endings on checkin; let Git manage the working-tree EOL.
+* text=auto
+
+# Notebooks are JSON — keep them LF and out of textual diff noise.
+*.ipynb text eol=lf
+
+# Binary assets — never touch EOL, never diff.
+*.pdf binary
+*.h5 binary
+*.png binary
+*.jpg binary
