@@ -8,6 +8,8 @@ performance.
 > BENG 537 – Medical Image Processing, George Mason University
 > Chase L. Roby, Jimmy T. Tran
 
+📄 **[Read the full project report (PDF)](Final%20Project%20Report.pdf)**
+
 ## Overview
 
 Building on the work of Pereira et al. (2016), we implement a U-Net CNN with 3×3
@@ -45,7 +47,7 @@ highest precision. The CNN substantially outperformed the intensity-thresholding
 | `data-inspection.ipynb`          | Dataset loading and exploratory inspection of the BraTS2020 `.h5` slices |
 | `Baseline-and-preprocessing.ipynb` | Threshold-based baseline segmentation and preprocessing experiments |
 | `CNN-Segmentation.ipynb`         | U-Net training, evaluation, and visualization |
-| `Final Project Report.pdf`       | Full written report |
+| [`Final Project Report.pdf`](Final%20Project%20Report.pdf) | Full written report |
 
 ## Data
 
