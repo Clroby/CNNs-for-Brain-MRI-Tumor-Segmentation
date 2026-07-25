@@ -65,3 +65,28 @@ data/raw/
 
 Python with PyTorch, NumPy, h5py, scikit-image, matplotlib, and Jupyter. Run the notebooks
 in the order listed above.
+
+## Roadmap
+
+Planned improvements, ordered by expected impact. Unchecked items are not yet implemented.
+
+**Accuracy**
+- [ ] Train on more volumes (move off the current 5-volume cap; run on GPU)
+- [ ] Data augmentation (flips, rotations, elastic deformation, intensity jitter)
+- [ ] Longer training with early stopping and LR scheduling (`ReduceLROnPlateau`)
+- [ ] Loss tuned for false negatives (Focal-Tversky)
+- [ ] Post-processing (largest-connected-component + morphological cleanup)
+
+**Rigor & reproducibility**
+- [ ] Config-driven preprocessing sweep that re-initializes the model per condition
+- [ ] Seed all RNGs (torch, numpy, CUDA)
+- [ ] `requirements.txt` with pinned dependencies
+- [ ] Volume-level (3D) Dice and per-condition statistical comparison
+
+**Structure**
+- [ ] Factor shared code into a `src/` module (`data`, `preprocess`, `model`, `metrics`)
+- [ ] Save model checkpoints
+
+**Stretch**
+- [ ] 2.5D / 3D U-Net
+- [ ] Combined preprocessing (normalization + Gaussian)
