@@ -1,59 +1,53 @@
-# CNN Segmentation — Brain Tumor Segmentation in MRIs
+# Brain tumor segmentation in MRI with a U-Net (BraTS2020)
 
-Convolutional neural network (U-Net) approach to **binary whole-tumor segmentation** on
-multi-modal MRI data from the **BraTS2020** dataset, evaluating the effect of preprocessing
-techniques (baseline, Gaussian smoothing, and intensity normalization) on segmentation
-performance.
+A U-Net, written in PyTorch, that outlines brain tumors (gliomas) in MRI scans from the BraTS2020 dataset. Alongside the model, we tested whether simple preprocessing, Gaussian smoothing or intensity normalization, changes how well it segments.
 
-> BENG 537 – Medical Image Processing, George Mason University
-> Chase L. Roby, Jimmy T. Tran
+By Chase L. Roby and Jimmy T. Tran, for BENG 537 (Medical Image Processing) at George Mason University. The full write-up is in the [project report (PDF)](Final%20Project%20Report.pdf).
 
-📄 **[Read the full project report (PDF)](Final%20Project%20Report.pdf)**
+## What we did
 
-## Overview
+The model follows Pereira et al. (2016): a U-Net with 3×3 convolutions. Each input is a 2D axial slice with the four MRI scan types stacked as channels (T1, T1 with gadolinium contrast, T2 and FLAIR). The output is a single mask marking the whole tumor. A plain intensity threshold serves as the baseline to beat.
 
-Building on the work of Pereira et al. (2016), we implement a U-Net CNN with 3×3
-convolutional kernels to segment gliomas from four co-registered MRI modalities
-(T1, T1Gd, T2, FLAIR) merged into a four-channel input. A simple intensity-thresholding
-method serves as a baseline for comparison.
+The step that matters most happens before any training. BraTS ships as 2D slices, and neighboring slices from the same patient look almost identical. Shuffle the slices and then split them, and the same brain lands in both the training and the test set, so the model can score well just by recognizing the patient. To avoid that, slices are grouped by patient first and the split happens at the patient level.
 
-Key pipeline steps:
+The pipeline, in order:
 
-1. Load HDF5 (`.h5`) slices from the BraTS2020 dataset
-2. Group by volume (subject) **before** splitting to prevent data leakage
-3. Split into train / validation / test at the volume level
-4. Extract 2D axial slices; merge four modalities into a four-channel input
-5. Collapse tumor sub-region masks into a single binary whole-tumor mask
-6. Apply preprocessing (baseline / Gaussian σ=1 / z-score normalization)
-7. Train U-Net (BCE + Dice loss, Adam, sigmoid + 0.6 threshold)
-8. Evaluate with DSC, PPV, and Sensitivity
+1. Load the BraTS2020 `.h5` slice files.
+2. Group slices by patient, then split into training, validation and test sets.
+3. Stack the four scan types into one four-channel input.
+4. Merge the tumor sub-regions into a single whole-tumor mask.
+5. Preprocess with one of three settings: none, Gaussian smoothing (σ = 1), or z-score normalization.
+6. Train the U-Net with a combined binary cross-entropy and Dice loss and the Adam optimizer, then threshold its output at 0.6.
+7. Score every test slice with Dice, PPV (precision) and sensitivity.
 
-## Results (mean ± std over test slices, n = 80)
+## Results
 
-| Preprocessing        | Dice (DSC)        | PPV               | Sensitivity       |
-|----------------------|-------------------|-------------------|-------------------|
-| Baseline             | 0.8330 ± 0.1549   | 0.7696 ± 0.1719   | 0.9356 ± 0.1260   |
-| Normalization (z)    | 0.8400 ± 0.1596   | 0.7859 ± 0.1891   | 0.9402 ± 0.0899   |
-| Gaussian (σ=1)       | 0.8238 ± 0.2180   | 0.8376 ± 0.2211   | 0.8159 ± 0.2257   |
+Mean ± standard deviation over 80 test slices:
 
-Intensity normalization gave the highest overlap/sensitivity; Gaussian smoothing gave the
-highest precision. The CNN substantially outperformed the intensity-thresholding baseline
-(DSC ≈ 0.006), which failed to produce meaningful segmentation.
+| Preprocessing | Dice | PPV | Sensitivity |
+| --- | --- | --- | --- |
+| None (baseline) | 0.8330 ± 0.1549 | 0.7696 ± 0.1719 | 0.9356 ± 0.1260 |
+| Z-score normalization | 0.8400 ± 0.1596 | 0.7859 ± 0.1891 | 0.9402 ± 0.0899 |
+| Gaussian smoothing (σ = 1) | 0.8238 ± 0.2180 | 0.8376 ± 0.2211 | 0.8159 ± 0.2257 |
 
-## Repository contents
+Normalization gave the best overlap and sensitivity, and Gaussian smoothing the best precision, though the gaps between the three are smaller than their standard deviations. The intensity-threshold baseline reached a Dice score of about 0.006 because it marked nearly the whole brain as tumor.
 
-| File | Description |
-|------|-------------|
-| `data-inspection.ipynb`          | Dataset loading and exploratory inspection of the BraTS2020 `.h5` slices |
-| `Baseline-and-preprocessing.ipynb` | Threshold-based baseline segmentation and preprocessing experiments |
-| `CNN-Segmentation.ipynb`         | U-Net training, evaluation, and visualization |
-| [`Final Project Report.pdf`](Final%20Project%20Report.pdf) | Full written report |
+Two caveats. Hardware limited the run to 5 patient volumes (3 for training, 1 for validation, 1 for testing) and 5 epochs, and the loss was still falling when training stopped. And the averages hide some complete misses on small tumors, where a slice can score 0.
 
-## Data
+## What's in the repo
 
-The [BraTS2020](https://www.kaggle.com/datasets/awsaf49/brats2020-training-data) dataset
-(~7.6 GB) is **not** tracked in this repository. Download it from Kaggle and place it under
-`data/raw/` so the notebooks resolve the following layout:
+Run the notebooks in this order:
+
+| File | What it does |
+| --- | --- |
+| `data-inspection.ipynb` | Loads the BraTS2020 `.h5` slices and takes a first look at them |
+| `Baseline-and-preprocessing.ipynb` | The threshold baseline and the preprocessing experiments |
+| `CNN-Segmentation.ipynb` | U-Net training, evaluation and figures |
+| `Final Project Report.pdf` | The full written report |
+
+## Getting the data
+
+The [BraTS2020 dataset](https://www.kaggle.com/datasets/awsaf49/brats2020-training-data) is about 7.6 GB and isn't stored here. Download it from Kaggle and put it under `data/raw/`, so the notebooks find this layout:
 
 ```
 data/raw/
@@ -61,32 +55,14 @@ data/raw/
 └── BraTS2020_training_data/
 ```
 
-## Requirements
+You'll need Python with PyTorch, NumPy, h5py, scikit-image, matplotlib and Jupyter.
 
-Python with PyTorch, NumPy, h5py, scikit-image, matplotlib, and Jupyter. Run the notebooks
-in the order listed above.
+## What would come next
 
-## Roadmap
-
-Planned improvements, ordered by expected impact. Unchecked items are not yet implemented.
-
-**Accuracy**
-- [ ] Train on more volumes (move off the current 5-volume cap; run on GPU)
-- [ ] Data augmentation (flips, rotations, elastic deformation, intensity jitter)
-- [ ] Longer training with early stopping and LR scheduling (`ReduceLROnPlateau`)
-- [ ] Loss tuned for false negatives (Focal-Tversky)
-- [ ] Post-processing (largest-connected-component + morphological cleanup)
-
-**Rigor & reproducibility**
-- [ ] Config-driven preprocessing sweep that re-initializes the model per condition
-- [ ] Seed all RNGs (torch, numpy, CUDA)
-- [ ] `requirements.txt` with pinned dependencies
-- [ ] Volume-level (3D) Dice and per-condition statistical comparison
-
-**Structure**
-- [ ] Factor shared code into a `src/` module (`data`, `preprocess`, `model`, `metrics`)
-- [ ] Save model checkpoints
-
-**Stretch**
-- [ ] 2.5D / 3D U-Net
-- [ ] Combined preprocessing (normalization + Gaussian)
+- Train on more patient volumes, on a GPU. This would help more than anything else on the list.
+- Add data augmentation: flips, rotations, elastic deformation and intensity jitter.
+- Train longer, with early stopping and learning-rate scheduling.
+- Use a loss that penalizes missed tumor more heavily (Focal-Tversky), aimed at the small-tumor failures.
+- Make runs reproducible: seed every random number generator and pin dependencies.
+- Report Dice per volume as well as per slice.
+- Try a 2.5D or 3D U-Net, to use context from neighboring slices.
